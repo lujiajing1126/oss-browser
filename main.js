@@ -16,7 +16,7 @@ var path = require("path");
 var nativeImage = require("electron").nativeImage;
 
 // electron-log收集和引入
-var log = require("electron-log");
+var log = require("electron-log/main");
 log.transports.file.level = false;
 log.transports.console.level = false;
 
@@ -67,6 +67,8 @@ function createWindow() {
     icon: custom.logo_ico || path.join(__dirname, "icons", "icon.ico"),
 
     webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false,
       plugins: true,
     },
   };
@@ -145,6 +147,11 @@ ipcMain.on("asynchronous", (event, data) => {
   }
 });
 
+ipcMain.handle("showOpenDialog", async (e, options) => {
+  const ret = await electron.dialog.showOpenDialog(win, options);
+  return ret.filePaths;
+});
+
 function moveFile(from, to, fn) {
   if (process.platform != "win32") {
     fs.rename(from, to, fn);
@@ -179,7 +186,8 @@ function moveFile(from, to, fn) {
 }
 
 //singleton
-var shouldQuit = app.makeSingleInstance((commandLine, workingDirectory) => {
+var shouldQuit = !app.requestSingleInstanceLock();
+app.on("second-instance", (event, argv, cwd) => {
   // Someone tried to run a second instance, we should focus our window.
   if (win) {
     if (win.isMinimized()) win.restore();
