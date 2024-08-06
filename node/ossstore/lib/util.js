@@ -2,7 +2,7 @@ var path = require("path");
 var fs = require("fs");
 var crypto = require("crypto");
 
-var CRC64 = require("../../crc64/index.js");
+var crc64 = require("tos-crc64-js");
 
 // isLog==1 open else close
 var isLog = localStorage.getItem("logFile") || 0;
@@ -22,7 +22,7 @@ module.exports = {
   closeFD: closeFD,
   deleteFileIfExists: deleteFileIfExists,
   createFileIfNotExists: createFileIfNotExists,
-  combileCrc64: combileCrc64,
+  combineCrc64: combineCrc64,
   getBufferCrc64: getBufferCrc64,
   crcFinal: crcFinal,
 };
@@ -159,7 +159,7 @@ function getBigFileMd5(p, fn) {
 function getFileCrc64(p, fn) {
   console.time("get crc64 hash for [" + p + "]");
   var startTime = new Date();
-  CRC64.crc64FileProcess(p, function (err, data) {
+  crc64.crc64File(p, function (err, data) {
     var endTime = new Date();
     console.timeEnd("get crc64 hash for [" + p + "]");
     console.log(data);
@@ -243,10 +243,9 @@ function getStreamCrc64(p, fn) {
  * @param len2
  * @param fn
  */
-function combileCrc64(str1, str2, len2, fn) {
-  CRC64.combileCrc64(str1, str2, len2, function (err, data) {
-    fn(err, data);
-  });
+function combineCrc64(str1, str2, len2, fn) {
+  var retCrc = crc64.combineCrc64(str1, str2, len2);
+  fn(undefined, retCrc);
 }
 
 /**
@@ -282,7 +281,7 @@ function crcFinal(arr) {
   var temp = arr[0].crc;
   var length = arr.length;
   for (var i = 0; i < length - 1; i++) {
-    combileCrc64(temp, arr[i + 1].crc, arr[i + 1].len, function (err, data) {
+    combineCrc64(temp, arr[i + 1].crc, arr[i + 1].len, function (err, data) {
       if (err) console.log(err);
       temp = data;
     });
